@@ -25,11 +25,22 @@ app.post('/translate', (req,res)=>{
     
     
     if(req.header("Content-Type")!="application/json"){
-        res.status(400).send({"message":"Bad Request"});
+        res.status(400).send({"message":"Bad Request Only application/json allowed"});
     }
     else{
+        
         const book = req.body;
-    
+        console.log(book.to)
+        console.log( book['to']===undefined);
+        if( book['text']===undefined || 
+         book['to']===undefined ||
+         book['from']===undefined ||
+        book['from']=='' ||
+        book['to']=='' ||
+        book['text']==''){
+            console.log(book)
+            res.status(400).send({"message":"Bad Request,bad formatted JSON"});
+        }
      db.searchText({
     
         "text":book['text'],
@@ -41,4 +52,6 @@ app.post('/translate', (req,res)=>{
     }
 })
 
-app.listen(port,()=>console.log(`Hello World app listening on port ${port}!`))
+var server=app.listen(port,()=>console.log(`Hello World app listening on port ${port}!`))
+
+module.exports =server;

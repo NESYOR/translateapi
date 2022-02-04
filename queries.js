@@ -13,7 +13,8 @@ const config = require('./config/config');
 
 const pool = new Pool(config.DBHost);
 
-  const createUser = (resulted,res) => {
+//Insert the translations into the table for caching
+  const createTranslation = (resulted,res) => {
     const { text,userLang,translation } = resulted
   
     pool.query('INSERT INTO translations (text,lang,trans_text,trans_lang) VALUES ($1, $2, $3, $4)', 
@@ -26,6 +27,7 @@ const pool = new Pool(config.DBHost);
     })
   }
 
+  //search database for translations if exists the return the record else create new
 const searchText = (query,req,res) => {
 
   const {text,from,to} = query;
@@ -35,14 +37,14 @@ UNION select * from translations where trans_text='${text}' and lang='${to}' and
     if (error) { 
         throw error
     }
-    if (results.rows.length){
+    if (results.rows.length!=0){
       console.log("db hit");
-      res.send(results.rows);
+      res.send(results.rows[0]);
     }
     else{
       translate(text,from,to,true).then(result=>{
         console.log("in the translate",text,to);
-        createUser(result,res);
+        createTranslation(result,res);
         smartCache(query);
     }).catch(err=>{res.send(err,"Error")});
     }
@@ -50,11 +52,13 @@ UNION select * from translations where trans_text='${text}' and lang='${to}' and
     
     })
 }
+
+//get a key by its value
 function getKeyByValue(object, value) {
   return Object.keys(object).find(key => object[key] === value);
 }
 
-
+//Smart caching based on similar languages.
 const smartCache = (query)=>{
 
   console.log("==============IN SMART CACHE===================");
@@ -100,6 +104,7 @@ UNION select * from translations where trans_text='${text}' and lang='${to_lang}
   });
 
 }
+
 const cacheLang = (resulted) => {
   const { text,userLang,translation } = resulted
 
@@ -113,6 +118,6 @@ const cacheLang = (resulted) => {
 }
   module.exports = {
     smartCache,
-    createUser,
+    createTranslation,
     searchText
   }
